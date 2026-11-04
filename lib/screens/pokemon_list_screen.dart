@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../blocs/pokemon_bloc.dart';
-import '../blocs/pokemon_event.dart';
-import '../blocs/pokemon_state.dart';
+import 'package:provider/provider.dart';
 import '../models/pokemon.dart';
+import '../providers/pokemon_provider.dart';
+import '../providers/pokemon_state.dart';
 import '../widgets/pokemon_card.dart';
 
 class PokemonListScreen extends StatelessWidget {
@@ -16,8 +15,9 @@ class PokemonListScreen extends StatelessWidget {
         title: const Text('Pokédex'),
         centerTitle: true,
       ),
-      body: BlocBuilder<PokemonBloc, PokemonState>(
-        builder: (context, state) {
+      body: Consumer<PokemonProvider>(
+        builder: (context, provider, _) {
+          final state = provider.state;
           if (state is PokemonLoading) {
             return const _LoadingView();
           } else if (state is PokemonSuccess) {
@@ -58,10 +58,7 @@ class _SuccessView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () async {
-        context.read<PokemonBloc>().add(const PokemonListRefreshed());
-        await context.read<PokemonBloc>().stream.firstWhere((s) => s is! PokemonLoading);
-      },
+      onRefresh: () => context.read<PokemonProvider>().loadPokemons(),
       child: GridView.builder(
         padding: const EdgeInsets.all(12),
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -85,10 +82,7 @@ class _ErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: () async {
-        context.read<PokemonBloc>().add(const PokemonListRefreshed());
-        await context.read<PokemonBloc>().stream.firstWhere((s) => s is! PokemonLoading);
-      },
+      onRefresh: () => context.read<PokemonProvider>().loadPokemons(),
       child: ListView(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         children: [
@@ -103,7 +97,7 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 24),
           Center(
             child: FilledButton.icon(
-              onPressed: () => context.read<PokemonBloc>().add(const PokemonListRequested()),
+              onPressed: () => context.read<PokemonProvider>().loadPokemons(),
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
             ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'blocs/pokemon_bloc.dart';
-import 'blocs/pokemon_event.dart';
+import 'package:provider/provider.dart';
+import 'providers/pokemon_provider.dart';
 import 'screens/pokemon_list_screen.dart';
 
 void main() {
@@ -19,8 +18,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: BlocProvider(
-        create: (_) => PokemonBloc()..add(const PokemonListRequested()),
+      home: ChangeNotifierProvider(
+        create: (_) => PokemonProvider()..loadPokemons(),
         child: const PokemonListScreen(),
       ),
     );

@@ -1,10 +1,10 @@
-import 'dart:io';
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:pokedex_app/blocs/pokemon_bloc.dart';
-import 'package:pokedex_app/blocs/pokemon_event.dart';
+import 'package:provider/provider.dart';
 import 'package:pokedex_app/models/pokemon.dart';
+import 'package:pokedex_app/providers/pokemon_provider.dart';
 import 'package:pokedex_app/screens/pokemon_list_screen.dart';
 import 'package:pokedex_app/services/pokemon_api_service.dart';
 
@@ -23,59 +23,57 @@ class _FakeNetworkErrorService extends PokemonApiService {
   @override
   Future<PokemonListResponse> fetchPokemonList({int limit = 30, int offset = 0}) async {
     await Future.delayed(const Duration(milliseconds: 10));
-    throw const SocketException('No network');
+    throw PokemonApiException('Sin conexión a internet. Verifica tu red e intenta de nuevo.');
   }
 }
 
-Widget _wrap(PokemonBloc bloc) {
+Widget _wrap(PokemonProvider provider) {
   return MaterialApp(
-    home: BlocProvider.value(value: bloc, child: const PokemonListScreen()),
+    home: ChangeNotifierProvider.value(value: provider, child: const PokemonListScreen()),
   );
 }
 
 void main() {
   testWidgets('muestra el indicador de carga mientras la petición está en curso',
       (tester) async {
-    final bloc = PokemonBloc(apiService: _FakeSuccessService())
-      ..add(const PokemonListRequested());
+    final provider = PokemonProvider(apiService: _FakeSuccessService());
+    unawaited(provider.loadPokemons());
 
-    await tester.pumpWidget(_wrap(bloc));
+    await tester.pumpWidget(_wrap(provider));
     await tester.pump();
 
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
     expect(find.text('Cargando Pokémon...'), findsOneWidget);
 
-    await tester.pumpAndSettle();
-    await bloc.close();
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.pump();
   });
 
   testWidgets('muestra la grilla de tarjetas cuando la API responde con éxito',
       (tester) async {
-    final bloc = PokemonBloc(apiService: _FakeSuccessService())
-      ..add(const PokemonListRequested());
+    final provider = PokemonProvider(apiService: _FakeSuccessService());
+    unawaited(provider.loadPokemons());
 
-    await tester.pumpWidget(_wrap(bloc));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(_wrap(provider));
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.pump();
 
     expect(find.byType(GridView), findsOneWidget);
     expect(find.textContaining('Bulbasaur'), findsOneWidget);
     expect(find.byType(RefreshIndicator), findsOneWidget);
-
-    await bloc.close();
   });
 
   testWidgets('muestra pantalla de error y botón de reintentar sin conexión',
       (tester) async {
-    final bloc = PokemonBloc(apiService: _FakeNetworkErrorService())
-      ..add(const PokemonListRequested());
+    final provider = PokemonProvider(apiService: _FakeNetworkErrorService());
+    unawaited(provider.loadPokemons());
 
-    await tester.pumpWidget(_wrap(bloc));
-    await tester.pumpAndSettle();
+    await tester.pumpWidget(_wrap(provider));
+    await tester.pump(const Duration(milliseconds: 20));
+    await tester.pump();
 
     expect(find.byIcon(Icons.wifi_off_rounded), findsOneWidget);
     expect(find.textContaining('conexión'), findsOneWidget);
     expect(find.widgetWithText(FilledButton, 'Reintentar'), findsOneWidget);
-
-    await bloc.close();
   });
 }

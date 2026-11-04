@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/pokemon.dart';
@@ -14,7 +15,20 @@ class PokemonApiService {
   Future<PokemonListResponse> fetchPokemonList({int limit = 30, int offset = 0}) async {
     final uri = Uri.parse('$_baseUrl/pokemon?limit=$limit&offset=$offset');
 
-    final response = await _client.get(uri).timeout(const Duration(seconds: 10));
+    final http.Response response;
+    try {
+      response = await _client.get(uri).timeout(const Duration(seconds: 10));
+    } on TimeoutException {
+      throw PokemonApiException(
+        'Tiempo de espera agotado. Verifica tu conexión e intenta de nuevo.',
+      );
+    } on http.ClientException {
+      // Lanzado tanto por dart:io (móvil/desktop) como por el cliente fetch
+      // en Flutter Web cuando no hay conexión o el host no responde.
+      throw PokemonApiException(
+        'Sin conexión a internet. Verifica tu red e intenta de nuevo.',
+      );
+    }
 
     if (response.statusCode != 200) {
       throw PokemonApiException(
