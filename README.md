@@ -20,9 +20,9 @@ Pokémon con sus datos actualizados en tiempo real.
   error de red o de servidor.
 - **Modelo** (`lib/models/pokemon.dart`): mapea el JSON de la API a un objeto
   Dart (`fromJson` / `toJson`).
-- **Gestión de estado** (`lib/blocs/`): implementado con `flutter_bloc`
-  (`PokemonBloc`), con tres estados: `PokemonLoading`, `PokemonSuccess` y
-  `PokemonError`.
+- **Gestión de estado** (`lib/providers/`): implementado con `provider`
+  (`PokemonProvider` basado en `ChangeNotifier`), con tres estados:
+  `PokemonLoading`, `PokemonSuccess` y `PokemonError`.
 - **UI** (`lib/screens/`, `lib/widgets/`): pantalla con `GridView` de
   tarjetas, `RefreshIndicator` para Pull-to-Refresh, y vistas dedicadas para
   cada estado (carga, éxito, error con botón de reintentar).
@@ -42,6 +42,6 @@ flutter run -d chrome   # o -d windows / -d <dispositivo conectado>
 flutter test
 ```
 
-Las pruebas (`test/pokemon_bloc_test.dart`, `test/widget_test.dart`) usan
+Las pruebas (`test/pokemon_provider_test.dart`, `test/widget_test.dart`) usan
 implementaciones falsas del servicio de API para verificar los tres estados
 (carga, éxito y error de red) sin depender de la red real.
